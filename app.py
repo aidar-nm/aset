@@ -88,12 +88,12 @@ grid_response = AgGrid(
 selected_rows = grid_response['selected_rows']
 
 # Всплывающее окно с подробностями при выборе строки
-if selected_rows:
-    st.subheader("📌 Детали выбранного лота")
-    selected_row = selected_rows[0]
-    selected_index = selected_row["_selectedRowNodeInfo"]["nodeRowIndex"]
-    details = filtered_data.iloc[selected_index]
-    st.json(details.to_dict())
+#if selected_rows:
+#    st.subheader("📌 Детали выбранного лота")
+#    selected_row = selected_rows[0]
+#    selected_index = selected_row["_selectedRowNodeInfo"]["nodeRowIndex"]
+#    details = filtered_data.iloc[selected_index]
+#    st.json(details.to_dict())
 
 # Экспорт данных
 st.subheader("📊 Экспорт данных")
@@ -117,3 +117,4 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+

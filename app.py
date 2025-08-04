@@ -68,7 +68,7 @@ display_df = filtered_data[cols_display].copy()
 display_df.columns = ["Номер объявления", "Организатор", "Номер лота", "Наименование лота", "Краткая характеристика", "Кол-во", "Сумма"]
 display_df.index.name = "№"
 
-search_query = st.text_input("🔍 Быстрый поиск по таблице")
+search_query = st.text_input("🔍 Быстрый поиск по всем столбцам")
 
 # Настройка таблицы AgGrid
 gb = GridOptionsBuilder.from_dataframe(display_df)
@@ -78,15 +78,22 @@ gb.configure_grid_options(domLayout='normal')
 grid_options = gb.build()
 
 # Отображение данных с возможностью поиска и выбора строки
-st.subheader(f"🗃️ Результаты ({len(display_df)} записей)")
+df_filtered = display_df
+if search_query:
+    search_query_lower = search_query.lower()
+    df_filtered = df_filtered[df_filtered.apply(
+        lambda row: row.astype(str).str.lower().str.contains(search_query_lower).any(), axis=1
+    )]
+
+# Таблица
+st.subheader(f"🗃️ Результаты ({len(df_filtered)} записей)")
 grid_response = AgGrid(
-    display_df,
+    df_filtered,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.SELECTION_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=True,
     height=400,
-    quick_filter=search_query
 )
 
 selected_rows = grid_response['selected_rows']
@@ -121,6 +128,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

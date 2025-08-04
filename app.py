@@ -63,12 +63,12 @@ with st.sidebar:
         progress_bar = st.progress(0)
         status_text = st.empty()
         with st.spinner("Идёт парсинг данных..."):
-            for i in range(1, pages + 1):
-                asyncio.run(run_parser(1))
-                progress_bar.progress(i / pages)
-                status_text.text(f"Парсинг страницы {i}/{pages}")
+            asyncio.run(run_parser(pages))   # <-- Вызов только ОДИН раз!
+            progress_bar.progress(1.0)
+            status_text.text(f"Парсинг {pages} страниц завершён.")
             st.success("✅ Парсинг завершён!")
             st.cache_data.clear()
+
 
     last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.info(f"🕒 Последнее обновление: {last_update}")
@@ -139,5 +139,6 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 

@@ -6,7 +6,6 @@ from sync import run_parser
 from export import export_to_excel_rus
 from datetime import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
-import streamlit as st
 
 # Инициализация базы данных
 init_db()
@@ -20,7 +19,6 @@ def get_data():
     df = df.reset_index(drop=True)
     df.index += 1
     return df
-
 
 # Фильтрация данных
 def filter_data(df, keyword, min_sum, date_limit):
@@ -47,9 +45,6 @@ with st.sidebar:
             st.success(f"✅ Парсинг {pages} страниц завершён!")
             st.cache_data.clear()
 
-
-
-
     last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.info(f"🕒 Последнее обновление: {last_update}")
 
@@ -69,40 +64,9 @@ display_df = filtered_data[cols_display].copy()
 display_df.columns = ["Номер объявления", "Организатор", "Номер лота", "Наименование лота", "Краткая характеристика", "Кол-во", "Сумма"]
 display_df.index.name = "№"
 
+# Быстрый поиск по всем столбцам
 search_query = st.text_input("🔍 Быстрый поиск по всем столбцам")
 
-# Настройка таблицы AgGrid
-gb = GridOptionsBuilder.from_dataframe(display_df)
-gb.configure_default_column(wrapText=True, autoHeight=True)
-gb.configure_selection("single", use_checkbox=True)
-gb.configure_grid_options(domLayout='normal')
-
-cell_style_jscode = JsCode("""
-function(params) {
-    if (params.value == '🟢 Новое!') {
-        return {
-            'color': 'white',
-            'backgroundColor': '#3FC380',
-            'fontWeight': 'bold'
-        }
-    }
-    return {};
-}
-""")
-gb.configure_column("", cellStyle=cell_style_jscode)
-
-grid_options = gb.build()
-
-grid_response = AgGrid(
-    display_df,
-    gridOptions=grid_options,
-    update_mode=GridUpdateMode.SELECTION_CHANGED,
-    allow_unsafe_jscode=True,
-    fit_columns_on_grid_load=True,
-    height=400,
-)
-
-# Отображение данных с возможностью поиска и выбора строки
 df_filtered = display_df
 if search_query:
     search_query_lower = search_query.lower()
@@ -110,9 +74,16 @@ if search_query:
         lambda row: row.astype(str).str.lower().str.contains(search_query_lower).any(), axis=1
     )]
 
-# Таблица
+# Настройка таблицы AgGrid
+gb = GridOptionsBuilder.from_dataframe(df_filtered)
+gb.configure_default_column(wrapText=True, autoHeight=True)
+gb.configure_selection("single", use_checkbox=True)
+gb.configure_grid_options(domLayout='normal')
+grid_options = gb.build()
+
+# Таблица (только один вывод!)
 st.subheader(f"🗃️ Результаты ({len(df_filtered)} записей)")
-grid_response = AgGrid(
+AgGrid(
     df_filtered,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.SELECTION_CHANGED,
@@ -120,16 +91,6 @@ grid_response = AgGrid(
     fit_columns_on_grid_load=True,
     height=400,
 )
-
-selected_rows = grid_response['selected_rows']
-
-# Всплывающее окно с подробностями при выборе строки
-#if selected_rows:
-#    st.subheader("📌 Детали выбранного лота")
-#    selected_row = selected_rows[0]
-#    selected_index = selected_row["_selectedRowNodeInfo"]["nodeRowIndex"]
-#    details = filtered_data.iloc[selected_index]
-#    st.json(details.to_dict())
 
 # Экспорт данных
 st.subheader("📊 Экспорт данных")
@@ -153,12 +114,3 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
-
-
-
-
-
-
-
-
-

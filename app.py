@@ -8,27 +8,6 @@ from datetime import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import streamlit as st
 
-def authenticate(username, password):
-    return username == "aset" and password == "aset2025"  # замени на свои логин и пароль
-
-def login():
-    st.sidebar.header("🔐 Авторизация")
-    username = st.sidebar.text_input("Логин")
-    password = st.sidebar.text_input("Пароль", type="password")
-    if st.sidebar.button("Войти"):
-        if authenticate(username, password):
-            st.session_state['auth'] = True
-        else:
-            st.sidebar.error("Неверный логин или пароль")
-
-if 'auth' not in st.session_state:
-    st.session_state['auth'] = False
-
-if not st.session_state['auth']:
-    login()
-    st.stop()  # приложение дальше не загрузится, пока не пройдёшь авторизацию
-
-
 # Инициализация базы данных
 init_db()
 
@@ -89,6 +68,8 @@ display_df = filtered_data[cols_display].copy()
 display_df.columns = ["Номер объявления", "Организатор", "Номер лота", "Наименование лота", "Краткая характеристика", "Кол-во", "Сумма"]
 display_df.index.name = "№"
 
+search_query = st.text_input("🔍 Быстрый поиск по таблице")
+
 # Настройка таблицы AgGrid
 gb = GridOptionsBuilder.from_dataframe(display_df)
 gb.configure_default_column(wrapText=True, autoHeight=True)
@@ -96,7 +77,7 @@ gb.configure_selection("single", use_checkbox=True)
 gb.configure_grid_options(domLayout='normal')
 grid_options = gb.build()
 
-# Отображение данных с возможностью выбора строки
+# Отображение данных с возможностью поиска и выбора строки
 st.subheader(f"🗃️ Результаты ({len(display_df)} записей)")
 grid_response = AgGrid(
     display_df,
@@ -104,7 +85,8 @@ grid_response = AgGrid(
     update_mode=GridUpdateMode.SELECTION_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=True,
-    height=400
+    height=400,
+    quick_filter=search_query
 )
 
 selected_rows = grid_response['selected_rows']
@@ -139,6 +121,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

@@ -1,0 +1,6 @@
+streamlit
+pandas
+aiohttp
+beautifulsoup4
+openpyxl
+streamlit-aggrid

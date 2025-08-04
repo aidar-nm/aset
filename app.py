@@ -15,9 +15,12 @@ init_db()
 @st.cache_data(ttl=300)
 def get_data():
     df = load_all_lots()
+    # Сортировка по дате окончания (новые выше), если надо — можно по ann_id
+    df = df.sort_values(['date_end', 'ann_id'], ascending=[False, False])
     df = df.reset_index(drop=True)
     df.index += 1
     return df
+
 
 # Фильтрация данных
 def filter_data(df, keyword, min_sum, date_limit):
@@ -37,12 +40,13 @@ st.title("📦 Әсеттің көмекшісі! v0.2-04.08.2025")
 # Панель управления парсингом
 with st.sidebar:
     st.header("⚙️ Управление парсингом")
-    pages = st.slider("Количество страниц для парсинга", 1, 30, 2)
+    pages = st.number_input("Количество страниц для парсинга", min_value=1, max_value=5000, value=30, step=1)
     if st.button("🚀 Запустить парсинг"):
         with st.spinner("Идёт парсинг данных..."):
             asyncio.run(run_parser(pages))
             st.success(f"✅ Парсинг {pages} страниц завершён!")
             st.cache_data.clear()
+
 
 
 
@@ -125,6 +129,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

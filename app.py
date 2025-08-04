@@ -39,14 +39,11 @@ with st.sidebar:
     st.header("⚙️ Управление парсингом")
     pages = st.slider("Количество страниц для парсинга", 1, 30, 2)
     if st.button("🚀 Запустить парсинг"):
-        progress_bar = st.progress(0)
-        status_text = st.empty()
         with st.spinner("Идёт парсинг данных..."):
-            asyncio.run(run_parser(pages))   # <-- Вызов только ОДИН раз!
-            progress_bar.progress(1.0)
-            status_text.text(f"Парсинг {pages} страниц завершён.")
-            st.success("✅ Парсинг завершён!")
+            asyncio.run(run_parser(pages))
+            st.success(f"✅ Парсинг {pages} страниц завершён!")
             st.cache_data.clear()
+
 
 
     last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -128,6 +125,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

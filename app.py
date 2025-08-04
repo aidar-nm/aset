@@ -77,7 +77,7 @@ gb.configure_default_column(wrapText=True, autoHeight=True)
 gb.configure_selection("single", use_checkbox=True)
 gb.configure_grid_options(domLayout='normal')
 
-cell_style_jscode = JsCode(\"\"\"
+cell_style_jscode = JsCode("""
 function(params) {
     if (params.value == '🟢 Новое!') {
         return {
@@ -88,7 +88,7 @@ function(params) {
     }
     return {};
 }
-\"\"\")
+""")
 gb.configure_column("", cellStyle=cell_style_jscode)
 
 grid_options = gb.build()
@@ -153,6 +153,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

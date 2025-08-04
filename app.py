@@ -6,6 +6,28 @@ from sync import run_parser
 from export import export_to_excel_rus
 from datetime import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+import streamlit as st
+
+def authenticate(username, password):
+    return username == "aset" and password == "aset2025"  # замени на свои логин и пароль
+
+def login():
+    st.sidebar.header("🔐 Авторизация")
+    username = st.sidebar.text_input("Логин")
+    password = st.sidebar.text_input("Пароль", type="password")
+    if st.sidebar.button("Войти"):
+        if authenticate(username, password):
+            st.session_state['auth'] = True
+        else:
+            st.sidebar.error("Неверный логин или пароль")
+
+if 'auth' not in st.session_state:
+    st.session_state['auth'] = False
+
+if not st.session_state['auth']:
+    login()
+    st.stop()  # приложение дальше не загрузится, пока не пройдёшь авторизацию
+
 
 # Инициализация базы данных
 init_db()
@@ -31,7 +53,7 @@ def filter_data(df, keyword, min_sum, date_limit):
 
 # Основное приложение Streamlit
 st.set_page_config(page_title="Парсер закупок med.ecc.kz", layout="wide")
-st.title("📦 Парсер закупок для медицинских организаций РК")
+st.title("📦 Әсеттің көмекшісі! v0.2-04.08.2025")
 
 # Панель управления парсингом
 with st.sidebar:
@@ -117,4 +139,5 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 

@@ -5,7 +5,7 @@ from db import init_db, load_all_lots
 from sync import run_parser
 from export import export_to_excel_rus
 from datetime import datetime
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
 import streamlit as st
 
 # Инициализация базы данных
@@ -76,7 +76,31 @@ gb = GridOptionsBuilder.from_dataframe(display_df)
 gb.configure_default_column(wrapText=True, autoHeight=True)
 gb.configure_selection("single", use_checkbox=True)
 gb.configure_grid_options(domLayout='normal')
+
+cell_style_jscode = JsCode(\"\"\"
+function(params) {
+    if (params.value == '🟢 Новое!') {
+        return {
+            'color': 'white',
+            'backgroundColor': '#3FC380',
+            'fontWeight': 'bold'
+        }
+    }
+    return {};
+}
+\"\"\")
+gb.configure_column("", cellStyle=cell_style_jscode)
+
 grid_options = gb.build()
+
+grid_response = AgGrid(
+    display_df,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    allow_unsafe_jscode=True,
+    fit_columns_on_grid_load=True,
+    height=400,
+)
 
 # Отображение данных с возможностью поиска и выбора строки
 df_filtered = display_df
@@ -129,6 +153,7 @@ with col2:
             file_name="zakupki.csv",
             mime="text/csv"
         )
+
 
 
 

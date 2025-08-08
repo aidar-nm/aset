@@ -4,6 +4,10 @@ import aiohttp
 from bs4 import BeautifulSoup
 from typing import List, Dict
 from db import init_db, insert_lot, lot_exists
+import os
+from datetime import datetime
+import pandas as pd
+from db import init_db, insert_lot, lot_exists, clear_db, load_all_lots
 
 BASE_URL = "https://med.ecc.kz"
 USER_AGENTS = [
@@ -12,6 +16,22 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
 ]
 REQUEST_DELAY = (0.1, 0.3)
+
+def write_log(mode: str, new_count: int):
+    """Пишем агрегированный лог в logs/ДДММГГ-ЧЧ.ММ.txt"""
+    now = datetime.now()
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    log_name = now.strftime("%d%m%y-%H.%M") + ".txt"
+    log_path = os.path.join(log_dir, log_name)
+
+    total = len(load_all_lots())
+    with open(log_path, "w", encoding="utf-8") as f:
+        f.write(f"Дата и время запуска: {now.strftime('%d.%m.%Y %H:%M')}\n")
+        f.write(f"Режим: {mode}\n")
+        f.write(f"Добавлено новых лотов: {new_count}\n")
+        f.write(f"Итого лотов в базе: {total}\n")
+    return log_path
 
 class Parser:
     def __init__(self):
@@ -137,6 +157,74 @@ class Parser:
         if page > max_pages:
             print(f"[{ann['ann_id']}] Достигнут лимит страниц лотов ({max_pages}), собрано {len(result)}")
         return result
+
+def clear_db():
+    import sqlite3
+    from db import DB_PATH
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM lots")
+    conn.commit()
+    conn.close()
+
+async def run_full_parser():
+    """
+    Полное обновление: очищаем БД и парсим ВСЕ страницы, пока не встретим пустую.
+    Никакого max_pages — идём до конца архива.
+    """
+    clear_db()
+    init_db()
+
+    new_lots = []
+    page = 1
+    async with Parser() as parser:
+        while True:
+            anns = await parser.parse_page(page)
+            if not anns:
+                # достигли конца архива
+                break
+
+            lots_lists = await asyncio.gather(*[parser.parse_lots(ann) for ann in anns])
+            for lots in lots_lists:
+                for lot in lots:
+                    insert_lot(lot)
+                    new_lots.append(lot)
+
+            page += 1
+            await asyncio.sleep(0.3)  # бережный таймаут
+
+    log_path = write_log("полный", len(new_lots))
+    return new_lots, log_path
+
+async def run_incremental_parser(max_pages: int):
+    from db import lot_exists
+    init_db()
+    new_lots = []
+    stop = False
+    async with Parser() as parser:
+        for page in range(1, max_pages + 1):
+            anns = await parser.parse_page(page)
+            if not anns:
+                break
+            stop = False
+            lots_lists = await asyncio.gather(
+                *[parser.parse_lots(ann) for ann in anns]
+            )
+            for lots in lots_lists:
+                for lot in lots:
+                    if lot_exists(lot["lot_id"]):
+                        stop = True
+                        break
+                    else:
+                        insert_lot(lot)
+                        new_lots.append(lot)
+                if stop:
+                    break
+            if stop:
+                break
+            await asyncio.sleep(0.5)
+    log_path = write_log("только новые", len(new_lots))
+    return new_lots, log_path
 
 
 async def run_parser(pages: int, progress_callback=None):

@@ -60,3 +60,10 @@ def get_last_update_date():
     result = c.fetchone()
     conn.close()
     return result[0] if result else None
+
+def clear_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM lots")
+    conn.commit()
+    conn.close()
